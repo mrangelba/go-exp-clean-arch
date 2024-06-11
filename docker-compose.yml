@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  server:
+    container_name: air
+    build:
+      dockerfile: Dockerfile
+    working_dir: /app
+    ports:
+      - 8080:8080
+    volumes:
+      - ./:/app
+      - ./.env:/app/.env
+      - ./.env:/app/tmp/.env
+    networks:
+      - server
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: order
+      MYSQL_PASSWORD: root
+    ports:
+      - 3306:3306
+    volumes:
+      - .docker/mysql:/var/lib/mysql
+    healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+    networks:
+      - server
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - server
+networks: 
+  server:
+    driver: bridge

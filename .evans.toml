@@ -1,0 +1,4 @@
+[default]
+protoFile = ["internal/infra/grpc/proto/order.proto"]
+package = "pb"
+service = "OrderService"
